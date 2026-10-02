@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="pt">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Cidade Ativa - Plataforma de soluções urbanas">
+    <title>Cidade Ativa | Soluções Urbanas</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="style.css">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+    <style>
+        /* MAPA REAL NO MESMO FORMATO DO MAPA ORIGINAL */
+        .map-container{
+            display:grid !important;
+            grid-template-columns:minmax(0,1fr) 180px !important;
+            gap:22px !important;
+            align-items:start !important;
+            position:relative !important;
+            width:100% !important;
+        }
+
+        .map-container #mapa{
+            width:100% !important;
+            height:430px !important;
+            border-radius:24px !important;
+            overflow:hidden !important;
+            border:1px solid #dce5e2 !important;
+            box-shadow:0 8px 25px rgba(0,0,0,.08) !important;
+        }
+
+        .map-container .map-legend{
+            position:relative !important;
+            top:auto !important;
+            right:auto !important;
+            width:180px !important;
+            padding:20px !important;
+            background:#fff !important;
+            border:1px solid #dce5e2 !important;
+            border-radius:16px !important;
+            box-shadow:0 4px 15px rgba(0,0,0,.08) !important;
+            z-index:1000 !important;
+        }
+
+        .map-container .map-legend strong{
+            display:block;
+            margin-bottom:18px;
+            font-size:16px;
+        }
+
+        .map-container .map-legend span{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            margin:14px 0;
+            font-size:14px;
+            color:#65716d;
+        }
+
+        .map-container .legend-dot{
+            width:12px;
+            height:12px;
+            min-width:12px;
+            border-radius:50%;
+            display:inline-block;
+        }
+
+        .map-container .legend-dot.red{background:#e53935}
+        .map-container .legend-dot.yellow{background:#fbc02d}
+        .map-container .legend-dot.green{background:#43a047}
+
+        .map-container .label-status{
+            background:white;
+            border:0;
+            box-shadow:0 2px 8px #0004;
+            border-radius:5px;
+            padding:5px 9px;
+            font-size:11px;
+            font-weight:bold;
+            color:#333;
+        }
+
+        @media(max-width:800px){
+            .map-container{grid-template-columns:1fr !important;}
+            .map-container #mapa{height:430px !important;}
+            .map-container .map-legend{width:100% !important;}
+        }
+    </style>
+
+<style>
+/* MAPA REAL NO CARTÃO STATUS DA CIDADE */
+.city-map{
+    position:relative !important;
+    width:100% !important;
+    height:280px !important;
+    overflow:hidden !important;
+    padding:0 !important;
+}
+
+#heroMap{
+    width:100% !important;
+    height:100% !important;
+    z-index:1 !important;
+}
+
+.city-card{
+    overflow:hidden !important;
+}
+
+.hero-marker{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    border:3px solid white;
+    box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+
+.hero-marker-container{
+    background:transparent !important;
+    border:0 !important;
+}
+
+#heroMap .leaflet-control-zoom{
+    margin:10px !important;
+}
+
+#heroMap .leaflet-control-attribution{
+    font-size:9px !important;
+}
+</style>
+
+</head>
+
+<body>
+
+    <!--cabeçalho-->
+
+    <header class="header">
+        <div class="container header-content">
+
+            <a href="#inicio" class="logo">
+                <span class="logo-icon">CA</span>
+                <div>
+                    <strong>Cidade Ativa</strong>
+                    <small>Prefeitura Municipal</small>
+                </div>
+            </a>
+
+            <nav class="nav" id="mainNav">
+                <a href="#inicio">Início</a>
+                <a href="#categorias">Serviços</a>
+                <a href="#acompanhar">Acompanhar</a>
+                <a href="#mapa-section">Mapa</a>
+                <a href="#transparencia">Transparência</a>    
+            </nav>
+
+            <div class="header-actions">
+                <button class="theme-btn" id="themeToggle" aria-label="Alternar tema">
+                    🌙
+                </button>
+
+                <button class="btn btn-primary btn-small" onclick="scrollToSection('registrar')">
+                    Registrar problema
+                </button>
+
+                <button class="menu-btn" id="menuToggle" aria-label="Abrir menu">
+                    ☰
+                </button>
+            </div>
+
+        </div>
+    </header>
+
+    <main>
+
+        <section class="hero" id="inicio">
+            <div class="container hero-grid">
+
+                <div class="hero-content">
+
+                    <div class="eyebrow">
+                        <span></span>
+                        Serviço público digital
+                    </div>
+
+                    <h1>
+                        Ajude a construir uma
+                        <span>cidade melhor.</span>
+                    </h1>
+
+                    <p>
+                        Registre problemas urbanos, acompanhe solicitações
+                        e veja as melhorias acontecendo perto de você.
+                    </p>
+
+                    <div class="hero-buttons">
+                        <button class="btn btn-primary btn-large" onclick="scrollToSection('registrar')">
+                            Registrar um problema →
+                        </button>
+
+                        <button class="btn btn-outline btn-large" onclick="scrollToSection('acompanhar')">
+                            Acompanhar solicitação
+                        </button>
+                    </div>
+
+                    <div class="hero-trust">
+                        <div class="avatars">
+                            <span>J</span>
+                            <span>M</span>
+                            <span>A</span>
+                            <span>+</span>
+                        </div>
+
+                        <div>
+                            <strong>3.675 cidadãos</strong>
+                            <small>já utilizaram a plataforma</small>'
+                            '
+                        </div>
+                    </div>
+
+                </div>
+
+                <div class="hero-visual">
+
+                    <div class="city-card">
+
+                        <div class="city-top">
+                            <span>STATUS DA CIDADE</span>
+                            <span class="live">
+                                <i></i> Ao vivo
+                            </span>
+                        </div>
+
+                        <div class="city-map">
+                            <div id="heroMap"></div>
+                        </div>
+
+                        <div class="city-footer">
+                            <div>
+                                <strong>68%</strong>
+                                <small>resolvidos</small>
+                            </div>
+
+                            <div>
+                                <strong>4,8 dias</strong>
+                                <small>tempo médio</small>
+                            </div>
+
+                            <div>
+                                <strong>18</strong>
+                                <small>equipes ativas</small>
+                            </div>
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!---Indicar--->
+
+        <section class="section indicators-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="section-label">PANORAMA</span>
+                        <h2>A cidade em números</h2>
+                    </div>
+
+                    <p>
+                        Dados atualizados das solicitações registradas
+                        pelos cidadãos.
+                    </p>
+                </div>
+
+                <div class="stats-grid">
+
+                    <div class="stat-card">
+                        <div class="stat-icon blue">📋</div>
+                        <div>
+                            <span>Total de solicitações</span>
+                            <strong data-stat="total">310</strong>
+                            <small>+12,4% este mês</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon green">✓</div>
+                        <div>
+                            <span>Problemas resolvidos</span>
+                            <strong data-stat="resolved">2.499</strong>
+                            <small>68% do total</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon orange">◷</div>
+                        <div>
+                            <span>Em andamento</span>
+                            <strong data-stat="progress">772</strong>
+                            <small>21% do total</small>
+                        </div>
+                    </div>
+
+                    <div class="stat-card">
+                        <div class="stat-icon purple">◌</div>
+                        <div>
+                            <span>Aguardando análise</span>
+                            <strong data-stat="waiting">275</strong>
+                            <small>11% do total</small>
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!--categorias-->
+
+        <section class="section categories-section" id="categorias">
+            <div class="container">
+
+                <div class="section-heading centered">
+                    <span class="section-label">SERVIÇOS</span>
+                    <h2>O que precisa ser resolvido?</h2>
+                    <p>
+                        Escolha uma categoria e informe o problema encontrado.
+                    </p>
+                </div>
+
+                <div class="categories-grid" id="categoriesGrid"></div>
+
+            </div>
+        </section>
+
+
+        <!--opções de registro -->
+
+        <section class="section register-section" id="registrar">
+            <div class="container">
+
+                <div class="form-wrapper">
+
+                    <div class="form-intro">
+
+                        <span class="section-label">NOVA SOLICITAÇÃO</span>
+
+                        <h2>Encontrou um problema?</h2>
+
+                        <p>
+                            Conte para a prefeitura. Sua solicitação será
+                            encaminhada para a equipe responsável.
+                        </p>
+
+                        <div class="form-steps">
+
+                            <div class="form-step active">
+                                <span>1</span>
+                                <div>
+                                    <strong>Informe o problema</strong>
+                                    <small>Conte o que aconteceu</small>
+                                </div>
+                            </div>
+
+                            <div class="form-step">
+                                <span>2</span>
+                                <div>
+                                    <strong>Localização</strong>
+                                    <small>Onde está o problema?</small>
+                                </div>
+                            </div>
+
+                            <div class="form-step">
+                                <span>3</span>
+                                <div>
+                                    <strong>Envie</strong>
+                                    <small>Receba seu protocolo</small>
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <form id="reportForm" class="report-form">
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="category">Categoria *</label>
+
+                                <select id="category" required>
+                                    <option value="">Selecione uma categoria</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="title">Título *</label>
+                                <input type="text" id="title" placeholder="Ex.: Buraco na avenida" required>
+                            </div>
+
+                        </div>
+
+                        <div class="form-group">
+                            <label for="description">Descrição *</label>
+
+                            <textarea id="description" rows="4"
+                                placeholder="Descreva o problema com o máximo de detalhes..." required></textarea>
+                        </div>
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="address">Endereço *</label>
+                                <input type="text" id="address" placeholder="Rua, avenida, número..." required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="neighborhood">Bairro *</label>
+
+                                <select id="neighborhood" required>
+                                    <option value="">Selecione</option>
+                                    <option>Centro</option>
+                                    <option>Planalto</option>
+                                    <option>Nova Esperança</option>
+                                    <option>Jardim América</option>
+                                    <option>Vila Nova</option>
+                                    <option>São José</option>
+                                </select>
+                            </div>
+
+                        </div>
+
+                        <div class="form-row">
+
+                            <div class="form-group">
+                                <label for="name">Nome *</label>
+                                <input type="text" id="name" placeholder="Seu nome" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">E-mail *</label>
+                                <input type="email" id="email" placeholder="voce@email.com" required>
+                            </div>
+
+                        </div>
+
+                        <div class="upload-area" id="uploadArea">
+
+                            <input type="file" id="image" accept="image/*" hidden>
+
+                            <div class="upload-icon">📷</div>
+
+                            <strong>Adicionar uma foto</strong>
+
+                            <span>
+                                Clique para selecionar uma imagem
+                            </span>
+
+                            <small id="fileName"></small>
+
+                        </div>
+
+                        <button class="btn btn-primary btn-large submit-btn" type="submit">
+                            Enviar solicitação
+                            <span>→</span>
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!--onde acompanhar --->
+
+        <section class="section tracking-section" id="acompanhar">
+            <div class="container">
+
+                <div class="section-heading centered">
+                    <span class="section-label">ACOMPANHAMENTO</span>
+                    <h2>Onde está sua solicitação?</h2>
+                    <p>
+                        Digite o número do protocolo para consultar o andamento.
+                    </p>
+                </div>
+
+                <div class="tracking-box">
+
+                    <div class="tracking-search">
+
+                        <input type="text" id="protocolInput" placeholder="Ex.: 2026-004821">
+
+                        <button class="btn btn-primary" id="searchProtocol">
+                            Consultar
+                        </button>
+
+                    </div>
+
+                    <div id="trackingResult"></div>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!-- possivel mapa -->
+
+        <section class="section map-section" id="mapa-section">
+            <div class="container">
+
+                <div class="section-heading">
+
+                    <div>
+                        <span class="section-label">MAPA</span>
+                        <h2>Problemas na cidade</h2>
+                    </div>
+
+                    <div class="map-filters">
+                        <button class="filter-btn active" data-filter="all">Todos</button>
+                        <button class="filter-btn" data-filter="Buracos e vias">Buracos</button>
+                        <button class="filter-btn" data-filter="Iluminação pública">Iluminação</button>
+                        <button class="filter-btn" data-filter="Limpeza urbana">Limpeza</button>
+                        <button class="filter-btn" data-filter="resolved">Resolvidos</button>
+                    </div>
+
+                </div>
+
+                <div class="map-container">
+
+                    <div id="mapa"></div>
+
+                    <div class="map-legend">
+
+                        <strong>Ocorrências</strong>
+
+                        <span>
+                            <i class="legend-dot red"></i>
+                            Em aberto
+                        </span>
+
+                        <span>
+                            <i class="legend-dot yellow"></i>
+                            Em atendimento
+                        </span>
+
+                        <span>
+                            <i class="legend-dot green"></i>
+                            Resolvido
+                        </span>
+
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!--acompanhar solicitações -->
+
+        <section class="section requests-section">
+            <div class="container">
+
+                <div class="section-heading">
+                    <div>
+                        <span class="section-label">TRANSPARÊNCIA</span>
+                        <h2>Solicitações recentes</h2>
+                    </div>
+
+                    <p>
+                        Acompanhe as demandas registradas pela população.
+                    </p>
+                </div>
+
+                <div class="requests-toolbar">
+
+                    <div class="search-box">
+                        🔎
+                        <input type="text" id="requestSearch" placeholder="Pesquisar solicitação...">
+                    </div>
+
+                    <select id="statusFilter">
+                        <option value="all">Todos os status</option>
+                        <option value="Resolvido">Resolvidos</option>
+                        <option value="Em atendimento">Em atendimento</option>
+                        <option value="Em análise">Em análise</option>
+                        <option value="Aguardando">Aguardando</option>
+                    </select>
+
+                    <select id="categoryFilter">
+                        <option value="all">Todas as categorias</option>
+                    </select>
+
+                </div>
+
+                <div class="requests-table-wrapper">
+
+                    <table class="requests-table">
+
+                        <thead>
+                            <tr>
+                                <th>Protocolo</th>
+                                <th>Problema</th>
+                                <th>Categoria</th>
+                                <th>Bairro</th>
+                                <th>Data</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+
+                        <tbody id="requestsTable"></tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+        </section>
+
+
+        <!--transparencia ao publico-->
+
+        <section class="section transparency-section" id="transparencia">
+
+            <div class="container">
+
+                <div class="section-heading centered">
+                    <span class="section-label">DADOS ABERTOS</span>
+                    <h2>Transparência em números</h2>
+                    <p>
+                        Informações públicas sobre o atendimento das solicitações.
+                    </p>
+                </div>
+
+                <div class="charts-grid">
+
+                    <div class="chart-card">
+
+                        <div class="chart-header">
+                            <div>
+                                <strong>Solicitações por categoria</strong>
+                                <small>Últimos 30 dias</small>
+                            </div>
+                        </div>
+
+                        <div class="bars" id="categoryChart"></div>
+
+                    </div>
+
+                    <div class="chart-card">
+
+                        <div class="chart-header">
+                            <div>
+                                <strong>Evolução mensal</strong>
+                                <small>Solicitações registradas</small>
+                            </div>
+                        </div>
+
+                        <div class="line-chart">
+
+                            <div class="line-bars">
+                                <span style="height: 45%"></span>
+                                <span style="height: 58%"></span>
+                                <span style="height: 52%"></span>
+                                <span style="height: 71%"></span>
+                                <span style="height: 64%"></span>
+                                <span style="height: 88%"></span>
+                                <span style="height: 78%"></span>
+                            </div>
+
+                            <div class="chart-labels">
+                                <span>Mar</span>
+                                <span>Abr</span>
+                                <span>Mai</span>
+                                <span>Jun</span>
+                                <span>Jul</span>
+                                <span>Ago</span>
+                                <span>Set</span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!--rodape-->
+
+    <footer class="footer">
+
+        <div class="container footer-grid">
+
+            <div class="footer-brand">
+
+                <div class="logo">
+                    <span class="logo-icon">CA</span>
+
+                    <div>
+                        <strong>Cidade Ativa</strong>
+                        <small>Prefeitura Municipal</small>
+                    </div>
+                </div>
+
+                <p>
+                    Sua denúncia, nossa ação.
+
+                    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+
+    <script>
+        const heroMap = L.map('heroMap', {
+            zoomControl: true,
+            attributionControl: true
+        });
+
+        L.tileLayer(
+            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+            {
+                maxZoom: 19,
+                attribution: 'Tiles &copy; Esri | &copy; OpenStreetMap'
+            }
+        ).addTo(heroMap);
+
+        const pontosHero = [
+            [-5.6900, -35.3100, 'Em aberto', '#e53935'],
+            [-5.7050, -35.3200, 'Em atendimento', '#fbc02d'],
+            [-5.7000, -35.2750, 'Resolvido', '#43a047']
+        ];
+
+        pontosHero.forEach(([lat, lng, status, cor]) => {
+            const icone = L.divIcon({
+                className: 'hero-marker-container',
+                html: `<div class="hero-marker" style="background:${cor}"></div>`,
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+
+            L.marker([lat, lng], {icon: icone})
+                .bindTooltip(status, {
+                    direction: 'top',
+                    offset: [0, -8]
+                })
+                .addTo(heroMap);
+        });
+
+        heroMap.setView([-5.7050, -35.3000], 11);
+
+        setTimeout(() => heroMap.invalidateSize(), 300);
+    </script>
+
+
+                    <script>
+                        const mapa = L.map('mapa');
+
+                        L.tileLayer(
+                            'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                            {
+                                maxZoom: 19,
+                                attribution: 'Tiles &copy; Esri | &copy; OpenStreetMap'
+                            }
+                        ).addTo(mapa);
+
+                        const ocorrencias = [
+                            [-5.6900,-35.3100,'Em aberto','#e53935'],
+                            [-5.7200,-35.2900,'Em aberto','#e53935'],
+                            [-5.6800,-35.2800,'Em aberto','#e53935'],
+                            [-5.7050,-35.3200,' Em atendimento','#fbc02d'],
+                            [-5.7350,-35.3050,'Em atendimento','#fbc02d'],
+                            [-5.6700,-35.3000,'Em atendimento','#fbc02d'],
+                            [-5.7000,-35.2750,'Resolvido','#43a047'],
+                            [-5.7500,-35.2900,'Resolvido','#43a047'],
+                            [-5.6850,-35.3300,'Resolvido','#43a047']
+                        ];
+
+                        const grupo = L.featureGroup();
+
+                        ocorrencias.forEach(([lat,lng,status,cor]) => {
+                            const marcador = L.circleMarker([lat,lng], {
+                                radius: 8,
+                                color: '#fff',
+                                weight: 3,
+                                fillColor: cor,
+                                fillOpacity: 1
+                            })
+                            .bindTooltip(status, {
+                                permanent: true,
+                                direction: 'right',
+                                offset: [10,0],
+                                className: 'label-status'
+                            })
+                            .on('click', () => alert('Status da ocorrência: ' + status))
+                            .addTo(mapa);
+
+                            grupo.addLayer(marcador);
+                        });
+
+                        mapa.fitBounds(grupo.getBounds(), {
+                            padding: [60,60],
+                            maxZoom: 13
+                        });
+
+                        setTimeout(() => mapa.invalidateSize(), 300);
+                    </script>
+
+                    <script src="script.js"></script>
+
+</body>
+
+</html>
